@@ -1,19 +1,19 @@
 import './style.css'
 import { Effect } from "effect"
 
-const test = `
-  <div>
-    TEST
-  </div>
-`
-
-
-const render = (vnode, parentDom) => Effect.gen(function* (){
-  parentDom.innerHTML = vnode
+const render = (vnode: Effect.Effect<HTMLElement>, parentDom: HTMLElement) => Effect.gen(function* (){
+  const result = yield* vnode
+  parentDom.appendChild(result)
 })
 
+
+const Component1 = () => Effect.gen(function* () {
+  const h1 = document.createElement("h1")
+  h1.innerText = "Fist component ever"
+  return h1 as HTMLElement
+})
 
 const root = document.getElementById('app') as HTMLElement;
 
 
-Effect.runFork(render(test, root))
+Effect.runFork(render(Component1(), root))
