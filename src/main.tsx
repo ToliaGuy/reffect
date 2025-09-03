@@ -1,6 +1,8 @@
-import { Effect } from "effect";
-import { InvalidChildError, type Component, type VNode, render, createElement } from "./vdom";
+import { Effect, Data } from "effect";
+import { type VNode, render, createElement, InvalidChildError } from "./vdom";
 
+
+class MyCustomError extends Data.TaggedError("MyCustomError")<{}> {}
 
 // Components (using JSX)
 const Heading = () =>
@@ -8,11 +10,31 @@ const Heading = () =>
     return yield* <h1>Hello World</h1>;
   });
 
+const Paragraph = ({content}: {content: string}) =>
+  Effect.gen(function* () {
+    return yield* <p>{content}</p>;
+  });
+
+const MyComponent = () =>
+  Effect.gen(function* () {
+    return yield* Effect.fail(new MyCustomError());
+    return yield* (
+      <div>
+        <Heading />
+        <Paragraph content="This is MyComponent" />
+      </div>
+    );
+  });
+
 const App = () =>
   Effect.gen(function* () {
     return yield* (
       <div id="root">
         <Heading />
+        <Heading />
+        <Heading />
+        <Paragraph content="This is Effect-TS VDOM with JSX" />
+        <MyComponent />
         <p>This is Effect-TS VDOM with JSX</p>
       </div>
     );
@@ -30,7 +52,9 @@ Effect.runPromise(
 // Minimal JSX typing (kept local to avoid extra files)
 declare global {
   namespace JSX {
-    type Element = Effect.Effect<VNode, InvalidChildError, never>;
+    // FUCK all the components have any in error channel,
+    // no way to pass generics to JSX.Element
+    type Element = Effect.Effect<VNode, any, never>;
     interface ElementChildrenAttribute { children: {}; }
     interface IntrinsicElements {
       div: any;
