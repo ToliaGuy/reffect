@@ -1,4 +1,10 @@
-import { Effect, Console } from "effect";
+import { Effect, Console, Data } from "effect";
+
+class InvalidChildError extends Data.TaggedError("InvalidChildError")<{
+  readonly child: unknown;
+  readonly childType: string;
+  readonly reason: string;
+}> {}
 
 export interface VNode {
   type: string | Component<any>;
@@ -22,10 +28,29 @@ const createVNode = (
     ref,
   });
 
+
+const normalizeChild = (child: any) => {
+  if (Effect.isEffect(child)) {
+    return child as Effect.Effect<any>;
+  } else {
+    if (child === null || child === undefined) {
+      return Effect.succeed(null);
+    } else if (typeof child === "number") {
+      return Effect.succeed(child.toString());
+    } else if (typeof child === "string") {
+      return Effect.succeed(child);
+    } else if (typeof child === "boolean") {
+      return Effect.succeed(child.toString());
+    } else {
+      return Effect.fail(new InvalidChildError({ child, childType: typeof child, reason: "Invalid child" }));
+    }
+  }
+}
+
 export const createElement = (
   type: any,
   props: Record<string, any> = {},
-  ...children: Effect.Effect<any, never, never>[]
+  ...children: any[]
 ) =>
   Effect.gen(function* () {
     let normalizedProps: any = {};
@@ -39,9 +64,9 @@ export const createElement = (
 
     // Normalize children
     if (children.length === 1) {
-      normalizedProps.children = yield* children[0];
+      normalizedProps.children = yield* normalizeChild(children[0]);
     } else if (children.length > 1) {
-      normalizedProps.children = yield* Effect.all(children);
+      normalizedProps.children = yield* Effect.all(children.map(normalizeChild));
     } else {
       normalizedProps.children = [];
     }
@@ -58,8 +83,6 @@ const render = (vnode: Effect.Effect<VNode>, parentDom: HTMLElement) => Effect.g
   yield* Console.log(yield* vnode);
 });
 
-
-
 const Heading = () =>
   Effect.gen(function* () {
     yield* Console.log("Heading");
@@ -70,13 +93,20 @@ const App = () =>
   Effect.gen(function* () {
     return yield*createElement("div", { id: "root" },
       createElement(Heading),
-      createElement("p", {}, Effect.succeed("This is Effect-TS VDOM"))
+      createElement("p", {}, "This is Effect-TS VDOM")
     );
 });
 
-Effect.runPromise(
-  render(createElement(App, {}), document.getElementById("app")!)
-);
-
 
 const root = document.getElementById('app') as HTMLElement;
+
+Effect.runPromise(
+  render(
+    createElement(App, {}).pipe(
+      Effect.catchAll(
+        () => Effect.die("Error")
+      )
+    ),
+    root
+  )
+);
