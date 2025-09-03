@@ -1,6 +1,6 @@
 import { Effect, Console, Data } from "effect";
 
-class InvalidChildError extends Data.TaggedError("InvalidChildError")<{
+export class InvalidChildError extends Data.TaggedError("InvalidChildError")<{
   readonly child: unknown;
   readonly childType: string;
   readonly reason: string;
@@ -79,13 +79,12 @@ export const createElement = (
     return yield* createVNode(type, normalizedProps, key, ref);
   });
 
-const render = (vnode: Effect.Effect<VNode>, parentDom: HTMLElement) => Effect.gen(function* () {
+export const render = (vnode: Effect.Effect<VNode>, parentDom: HTMLElement) => Effect.gen(function* () {
   yield* Console.log(yield* vnode);
 });
 
 const Heading = () =>
   Effect.gen(function* () {
-    yield* Console.log("Heading");
     return yield* createElement("h1", {}, Effect.succeed("Hello World"));
 });
 
@@ -98,15 +97,5 @@ const App = () =>
 });
 
 
-const root = document.getElementById('app') as HTMLElement;
-
-Effect.runPromise(
-  render(
-    createElement(App, {}).pipe(
-      Effect.catchAll(
-        () => Effect.die("Error")
-      )
-    ),
-    root
-  )
-);
+// Fragment value for JSX
+export const Fragment = Symbol.for("reffect.fragment");
