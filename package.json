@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "parse": "tsx compiler/main.ts"
+    "compile": "tsx compiler/compile.ts"
   },
   "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@babel/plugin-transform-react-jsx": "^7.25.0",
+    "@babel/generator": "^7.28.3",
     "@babel/parser": "^7.28.4",
     "@types/node": "^24.3.1",
     "tsx": "^4.20.5",

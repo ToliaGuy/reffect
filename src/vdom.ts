@@ -7,13 +7,13 @@ export class InvalidChildError extends Data.TaggedError("InvalidChildError")<{
 }> {}
 
 export interface VNode {
-  type: string | Component<any>;
+  type: string | Component<any, any, any>;
   props: Record<string, any>;
   key?: any;
   ref?: any;
 }
 
-export type Component<P = any> = (props: P) => Effect.Effect<VNode>;
+export type Component<P = any, E = never, R = never> = (props: P) => Effect.Effect<VNode, E, R>;
 
 const createVNode = (
   type: any,
@@ -21,7 +21,7 @@ const createVNode = (
   key?: any,
   ref?: any
 ) =>
-  Effect.succeed({
+  Effect.succeed<VNode>({
     type,
     props,
     key,
@@ -29,37 +29,64 @@ const createVNode = (
   });
 
 
-const normalizeChild = (child: any) => {
+function normalizeChild<C>(
+  child: C
+): C extends Effect.Effect<any, infer E, infer R>
+  ? Effect.Effect<any, E, R>
+  : Effect.Effect<any, InvalidChildError, never> {
   if (Effect.isEffect(child)) {
-    return child as Effect.Effect<any>;
+    return child as any;
   } else {
     if (child === null || child === undefined) {
-      return Effect.succeed(null);
+      return Effect.succeed(null) as any;
     } else if (typeof child === "number") {
-      return Effect.succeed(child.toString());
+      return Effect.succeed(child.toString()) as any;
     } else if (typeof child === "string") {
-      return Effect.succeed(child);
+      return Effect.succeed(child) as any;
     } else if (typeof child === "boolean") {
-      return Effect.succeed(child.toString());
+      return Effect.succeed(child.toString()) as any;
     } else {
-      return Effect.fail(new InvalidChildError({ child, childType: typeof child, reason: "Invalid child" }));
+      return Effect.fail(new InvalidChildError({ child, childType: typeof child, reason: "Invalid child" })) as any;
     }
   }
 }
 
-export const createElement = (
-  type: any,
-  props: Record<string, any> = {},
-  ...children: any[]
-) =>
-  Effect.gen(function* () {
+// Helper type to extract error type from Effect or default to never
+type ExtractError<T> = T extends Effect.Effect<any, infer E, any> ? E : never;
+
+// Helper type to extract requirement type from Effect or default to never  
+type ExtractRequirement<T> = T extends Effect.Effect<any, any, infer R> ? R : never;
+
+// Union all error types from children array
+type ChildrenErrors<Children extends readonly unknown[]> = {
+  [K in keyof Children]: ExtractError<Children[K]>
+}[number];
+
+// Union all requirement types from children array
+type ChildrenRequirements<Children extends readonly unknown[]> = {
+  [K in keyof Children]: ExtractRequirement<Children[K]>
+}[number];
+
+export function createElement<
+  T extends string | Component<any, any, any>,
+  P = T extends Component<infer PP, any, any> ? PP : Record<string, any>,
+  Children extends readonly unknown[] = readonly unknown[]
+>(
+  type: T,
+  props: P | null = {} as any,
+  ...children: Children
+): T extends Component<any, infer E, infer R>
+  ? Effect.Effect<VNode, E | ChildrenErrors<Children> | InvalidChildError, R | ChildrenRequirements<Children>>
+  : Effect.Effect<VNode, ChildrenErrors<Children> | InvalidChildError, ChildrenRequirements<Children>> {
+  
+  const effect = Effect.gen(function* () {
     let normalizedProps: any = {};
     let key, ref;
 
     for (let i in props) {
-      if (i === "key") key = props[i];
-      else if (i === "ref" && typeof type !== "function") ref = props[i];
-      else normalizedProps[i] = props[i];
+      if (i === "key") key = (props as any)[i];
+      else if (i === "ref" && typeof type !== "function") ref = (props as any)[i];
+      else (normalizedProps as any)[i] = (props as any)[i];
     }
 
     // Normalize children
@@ -73,11 +100,14 @@ export const createElement = (
 
     // If type is a component, run it
     if (typeof type === "function") {
-      return yield* type(normalizedProps) as Effect.Effect<VNode>;
+      return yield* (type as any)(normalizedProps);
     }
 
     return yield* createVNode(type, normalizedProps, key, ref);
   });
+  
+  return effect as any;
+}
 
 export const render = (vnode: Effect.Effect<VNode>, parentDom: HTMLElement) => Effect.gen(function* () {
   yield* Console.log(yield* vnode);

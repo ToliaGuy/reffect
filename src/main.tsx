@@ -52,9 +52,8 @@ Effect.runPromise(
 // Minimal JSX typing (kept local to avoid extra files)
 declare global {
   namespace JSX {
-    // FUCK all the components have any in error channel,
-    // no way to pass generics to JSX.Element
-    type Element = Effect.Effect<VNode, any, never>;
+    // Use unknown instead of any to preserve type inference
+    type Element = Effect.Effect<VNode, any, any>;
     interface ElementChildrenAttribute { children: {}; }
     interface IntrinsicElements {
       div: any;
