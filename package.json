@@ -12,6 +12,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@babel/plugin-transform-react-jsx": "^7.25.0",
+    "@babel/plugin-transform-typescript": "^7.25.0",
     "@babel/generator": "^7.28.3",
     "@babel/parser": "^7.28.4",
     "@types/node": "^24.3.1",

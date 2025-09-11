@@ -1,5 +1,5 @@
 import { Effect, Data } from "effect";
-import { type VNode, render, createElement } from "../src/vdom";
+import { type VNode, render, createElement, InvalidChildError } from "./vdom";
 class MyCustomError extends Data.TaggedError("MyCustomError")<{}> {}
 
 // Components (using JSX)
@@ -28,3 +28,22 @@ const App = () => Effect.gen(function* () {
 });
 const root = document.getElementById("app") as HTMLElement;
 Effect.runPromise(render(Effect.orDie(createElement(App, {})), root));
+console.log("hello");
+
+// Minimal JSX typing (kept local to avoid extra files)
+declare global {
+  namespace JSX {
+    // Use unknown instead of any to preserve type inference
+    type Element = Effect.Effect<VNode, any, any>;
+    interface ElementChildrenAttribute {
+      children: {};
+    }
+    interface IntrinsicElements {
+      div: any;
+      h1: any;
+      p: any;
+      span: any;
+      button: any;
+    }
+  }
+}

@@ -49,6 +49,8 @@ Effect.runPromise(
   )
 );
 
+console.log("hello")
+
 // Minimal JSX typing (kept local to avoid extra files)
 declare global {
   namespace JSX {

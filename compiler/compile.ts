@@ -7,13 +7,7 @@ async function ensureDirectory(path: string) {
   await mkdir(path, { recursive: true });
 }
 
-async function main() {
-  const projectRoot = resolve(process.cwd());
-  const inputPath = resolve(projectRoot, "src", "main.tsx");
-  const outputPath = resolve(projectRoot, "compiler", "generated.ts");
-
-  const sourceCode = await readFile(inputPath, "utf8");
-
+export async function compile(sourceCode: string, filename: string) {
   const ast = parse(sourceCode, {
     sourceType: "module",
     plugins: [
@@ -25,8 +19,8 @@ async function main() {
     allowAwaitOutsideFunction: false
   });
 
-  const result = await transformFromAstAsync(ast as any, sourceCode, {
-    filename: "src/main.tsx",
+  const result = await transformFromAstAsync(ast, sourceCode, {
+    filename: filename,
     babelrc: false,
     configFile: false,
     generatorOpts: { retainLines: false },
@@ -47,8 +41,25 @@ async function main() {
     throw new Error("Babel transform returned no code");
   }
 
+
+  return {
+    js: { 
+      code: result.code
+    },
+    css: '' // don't bother with css for now
+  };
+}
+
+async function main() {
+  const projectRoot = resolve(process.cwd());
+  const inputPath = resolve(projectRoot, "src", "main.reffect");
+  const outputPath = resolve(projectRoot, "compiler", "generated.ts");
+
+  const sourceCode = await readFile(inputPath, "utf8");
+  const result = await compile(sourceCode, "src/main.reffect");
+
   await ensureDirectory(dirname(outputPath));
-  await writeFile(outputPath, result.code, "utf8");
+  await writeFile(outputPath, result.js.code, "utf8");
   console.log(`Generated code written to: ${outputPath}`);
 }
 

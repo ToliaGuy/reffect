@@ -1,0 +1,20 @@
+{
+  "name": "vite-plugin-reffect",
+  "version": "0.1.0",
+  "description": "Vite plugin for Reffect files",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "keywords": ["vite", "plugin", "reffect", "effect-ts", "jsx", "typescript"],
+  "peerDependencies": {
+    "@babel/core": "^7.25.0",
+    "@babel/parser": "^7.28.4",
+    "@babel/plugin-transform-react-jsx": "^7.25.0",
+    "@babel/plugin-transform-typescript": "^7.25.0",
+    "vite": "^7.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
